@@ -149,7 +149,7 @@ public class DPanel extends JPanel {
 
 	public void Draw_Chars() {
 		
-		Font_Image = new BufferedImage(Image_Size.width, Image_Size.height,
+		Font_Image = new BufferedImage(Image_Size.width +1, Image_Size.height+1,
 				BufferedImage.TYPE_INT_ARGB);
 		
 		Graphics _g = Font_Image.getGraphics();
@@ -187,6 +187,7 @@ public class DPanel extends JPanel {
 			if (showGrid) {
 				g.setColor(GridColor);
 				g.drawRect(x, y, cellWidth, cellHeight);
+				System.out.println("X;Y => ( " + x + ";" + y + ")");
 			}
 
 			g.setColor(CharsColor);
@@ -348,7 +349,7 @@ public class DPanel extends JPanel {
 				BufferPlain.write("=>");
 				BufferPlain.write(Integer.toString(x));
 				BufferPlain.write(';');
-				BufferPlain.write(Integer.toString(y + tes.getHeight() - g.getFontMetrics().getDescent() ));
+				BufferPlain.write(Integer.toString(y));
 				BufferPlain.newLine();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
