@@ -4,11 +4,16 @@ import java.io.File;
 
 import javax.swing.filechooser.FileFilter;
 
+/**
+ * Add comment for javadoc to this class
+ * @author user
+ *
+ */
 public class TTFFilter extends FileFilter {
 
 	
 	public TTFFilter() {
-		//Costruttore vuoto
+		//questo è un costruttore vuoto
 	}
 	public boolean accept(File f) {
 		
