@@ -28,7 +28,8 @@ public class TTFFilter extends FileFilter {
 		
 		return false;
 	}
-
+	
+	//Filter Description
 	public String getDescription() {
 		return "Open a .ttf font file";
 	}
