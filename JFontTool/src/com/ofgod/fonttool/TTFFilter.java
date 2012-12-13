@@ -8,7 +8,7 @@ public class TTFFilter extends FileFilter {
 
 	
 	public TTFFilter() {
-		//...
+		//Costruttore vuoto
 	}
 	public boolean accept(File f) {
 		
