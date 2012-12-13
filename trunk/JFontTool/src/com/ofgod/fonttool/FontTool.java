@@ -284,7 +284,6 @@ public class FontTool extends JFrame implements ActionListener {
 			
 			public void actionPerformed(ActionEvent act) {
 				Color CharsColor;
-				//FIXME:Get background from dpanel class 
 				CharsColor = JColorChooser.showDialog(Settings, "Choose Characters Color", Color.white);
 				if( CharsColor != null ){
 					System.out.println("Chars Color => " + CharsColor.toString());
@@ -342,7 +341,6 @@ public class FontTool extends JFrame implements ActionListener {
 				JFileChooser FChooser = new JFileChooser();
 				FChooser.setDialogTitle("Export to binary data...");
 				FChooser.setAcceptAllFileFilterUsed(true);
-				//FChooser2.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				int stats;
 				stats = FChooser.showSaveDialog(null);
 				if( stats == JFileChooser.APPROVE_OPTION ){
@@ -354,7 +352,6 @@ public class FontTool extends JFrame implements ActionListener {
 						
 						if( Question == JOptionPane.YES_OPTION ){
 						    System.out.println("Dir: " + FChooser.getSelectedFile().getAbsolutePath());
-						    //if( !FChooser2.getSelectedFile().canWrite() )
 						    Preview.savetoBin(FChooser.getSelectedFile().getAbsolutePath());
 						} else {
 							FChooser.showSaveDialog(null);
