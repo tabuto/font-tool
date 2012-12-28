@@ -149,7 +149,7 @@ public class DPanel extends JPanel {
 
 	public void Draw_Chars() {
 		
-		Font_Image = new BufferedImage(Image_Size.width +1, Image_Size.height+1,
+		Font_Image = new BufferedImage(Image_Size.width - 1, Image_Size.height - 1,
 				BufferedImage.TYPE_INT_ARGB);
 		
 		Graphics _g = Font_Image.getGraphics();
@@ -163,6 +163,8 @@ public class DPanel extends JPanel {
 		
 		int x;
 		int y;
+		int cx;
+		int cy;
 		int k = 0;
 		int row = 16;
 
@@ -187,12 +189,15 @@ public class DPanel extends JPanel {
 			if (showGrid) {
 				g.setColor(GridColor);
 				g.drawRect(x, y, cellWidth, cellHeight);
-				System.out.println("X;Y => ( " + x + ";" + y + ")");
+				System.out.println("X;Y => ( " + x + ";" + y + "(" + tes.getHeight() + ")" + ")");
 			}
 
 			g.setColor(CharsColor);
-
-			g.drawString(Character.toString(i), x , y +  tes.getHeight() - g.getFontMetrics().getDescent());
+			
+			cx = (x + 4);
+			cy = (y + tes.getHeight() - g.getFontMetrics().getDescent() );
+			
+			g.drawString(Character.toString(i), cx , cy/* +  tes.getHeight() - g.getFontMetrics().getDescent()*/);
 
 			x += cellWidth;
 
@@ -214,13 +219,18 @@ public class DPanel extends JPanel {
 	
 	public void savetoBin(String OutFile){
 		File Out;
-		DataOutputStream BufferBin = null;
+		//DataOutputStream BufferBin = null;
+        DataFile BufferBin = null;
 		Byte[] Magic = {'A','F','O','N','T' };
 		Byte Version = 26;
+		short RealWidth = (short) (Image_Size.width);
+		short RealHeight =(short) (Image_Size.height);
+
 		int x = 0;
 		int y = 0;
 		int row = 16;
 		int k = 0;
+		int Char = 0;
 		
 		if( Font_Image == null ){
 			return;
@@ -236,29 +246,28 @@ public class DPanel extends JPanel {
 			
 			if( Out.exists() && !Out.canWrite() ){
 				//FIXME:Ask to overwrite or specify a new name.
-				System.out.println("Aborted...");
-				return;//Dam it
+				System.out.println("Failed...");
+				return;
 			}
 			
-			BufferBin = new DataOutputStream(new FileOutputStream(Out.getAbsoluteFile()));
+			BufferBin = new DataFile(new FileOutputStream(Out.getAbsoluteFile()));
 			
 			for( int i = 0; i < Magic.length; i++ ){
-				BufferBin.writeByte(Magic[i]);
+				BufferBin.write(Magic[i]);
 			}
-			System.out.println("Writing to binary file.");
-			BufferBin.writeShort(Version);
-			BufferBin.writeInt(Image_Size.width);
-			BufferBin.writeInt(Image_Size.height);
-			BufferBin.writeInt(cellWidth);
-			BufferBin.writeInt(cellHeight);
-			BufferBin.writeInt(FontManager.GetFont().getSize());
-			BufferBin.writeChar('\n');
 			
+			System.out.println("Writing to binary file." + " " + Image_Size.width + Image_Size.height);
+			BufferBin.write(Version);
+			BufferBin.writeShort((short)(Image_Size.width - 1));
+			BufferBin.writeShort((short)(Image_Size.height - 1));
+			BufferBin.write(cellWidth);
+			BufferBin.write(cellHeight);
+			BufferBin.write(FontManager.GetFont().getSize());			
 		} catch ( IOException e ){
 			System.out.println(e);
 		}
 		
-		for (char i = (char)startingChar; i < 256; i++, k++) {
+		for (char i = (char)startingChar; i < 256; i++, k++, Char++) {
 
 			if (k == row) {
 				y += cellHeight;
@@ -266,13 +275,10 @@ public class DPanel extends JPanel {
 				k = 0;
 			}
 			
-		//	g.drawString(Character.toString(i), x, y + 10);
 			try {
-				BufferBin.writeChar(i);
-				BufferBin.writeChar('-');
-				BufferBin.writeInt(x);
-				BufferBin.writeChar(';');
-				BufferBin.writeInt( y + tes.getHeight() - g.getFontMetrics().getDescent() );
+				BufferBin.write(Char);
+				BufferBin.writeShort((short)x);
+				BufferBin.writeShort((short)(y + tes.getHeight() - g.getFontMetrics().getDescent() ) );
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -281,6 +287,7 @@ public class DPanel extends JPanel {
 
 		}
 		try {
+			System.out.println("Wrote " + BufferBin.Length() + " bytes.");
 			BufferBin.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -316,13 +323,13 @@ public class DPanel extends JPanel {
 			
 			BufferPlain = new BufferedWriter(new FileWriter(Out.getAbsoluteFile()));
 			BufferPlain.write("imageWidth ");
-			BufferPlain.write(Integer.toString(Image_Size.width));
+			BufferPlain.write(Integer.toString(Image_Size.width - 1));
 			BufferPlain.write(" imageHeight ");
-			BufferPlain.write(Integer.toString(Image_Size.height));
+			BufferPlain.write(Integer.toString(Image_Size.height - 1));
 			BufferPlain.write(" cellWidth ");
 			BufferPlain.write(Integer.toString(cellWidth));
 			BufferPlain.write(" cellHeight ");
-			BufferPlain.write(Integer.toString(cellHeight));
+			BufferPlain.write(Integer.toString(tes.getHeight()));
 			BufferPlain.newLine();
 		} catch ( IOException e ){
 			System.out.println(e);
@@ -345,8 +352,9 @@ public class DPanel extends JPanel {
 			
 		//	g.drawString(Character.toString(i), x, y + 10);
 			try {
+				//FIXME: Add to each char his width.
 				BufferPlain.write(Integer.toString(i));
-				BufferPlain.write("=>");
+				BufferPlain.write(" = ");
 				BufferPlain.write(Integer.toString(x));
 				BufferPlain.write(';');
 				BufferPlain.write(Integer.toString(y));
