@@ -339,7 +339,7 @@ public class FontTool extends JFrame implements ActionListener {
 			
 			public void actionPerformed(ActionEvent ev) {
 				JFileChooser FChooser = new JFileChooser();
-				FChooser.setDialogTitle("Export to binary data...");
+				FChooser.setDialogTitle("Export to binary file...");
 				FChooser.setAcceptAllFileFilterUsed(true);
 				int stats;
 				stats = FChooser.showSaveDialog(null);
@@ -351,7 +351,7 @@ public class FontTool extends JFrame implements ActionListener {
 			                    JOptionPane.YES_NO_OPTION);
 						
 						if( Question == JOptionPane.YES_OPTION ){
-						    System.out.println("Dir: " + FChooser.getSelectedFile().getAbsolutePath());
+						    //System.out.println("Dir: " + FChooser.getSelectedFile().getAbsolutePath());
 						    Preview.savetoBin(FChooser.getSelectedFile().getAbsolutePath());
 						} else {
 							FChooser.showSaveDialog(null);
