@@ -6,9 +6,14 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import java.awt.image.FilteredImageSource;
+import java.awt.image.ImageFilter;
+import java.awt.image.ImageProducer;
+import java.awt.image.RGBImageFilter;
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -19,23 +24,27 @@ import javax.swing.JPanel;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 
-/*
- BufferedImage buf = new BufferedImage(Image_Size.width *2, Image_Size.width *2, BufferedImage.TYPE_INT_ARGB);
- //drawCharacters(buf.getGraphics(), Color.white);
- try {
- //ImageIO.write(Font_Image, "png", new File("/home/adriano/test.png"));
- } catch (IOException e) {
- // TODO Auto-generated catch block
- System.out.println("Failed.");
- e.printStackTrace();
- }
- */
+
+
 /*
  DPanel:
  A simple JPanel on which you can draw basic shapes or load basic images.
- */
+*/
+
 public class DPanel extends JPanel {
 	private static final long serialVersionUID = -2023403245235877149L;
 
@@ -202,6 +211,7 @@ public class DPanel extends JPanel {
 			x += cellWidth;
 
 		}
+
 		g.dispose();
 		// drawCharacters(buf.getGraphics(), Color.white);
 		/*
@@ -223,23 +233,16 @@ public class DPanel extends JPanel {
         DataFile BufferBin = null;
 		Byte[] Magic = {'A','F','O','N','T' };
 		Byte Version = 26;
-		short RealWidth = (short) (Image_Size.width);
-		short RealHeight =(short) (Image_Size.height);
 
 		int x = 0;
 		int y = 0;
 		int row = 16;
 		int k = 0;
-		int Char = 0;
+
 		
 		if( Font_Image == null ){
 			return;
 		}
-		
-		Graphics _g = Font_Image.getGraphics();
-		Graphics2D g = (Graphics2D) _g;
-
-		FontMetrics tes = getFontMetrics(FontManager.GetFont());
 		
 		try{
 			Out = new File(OutFile);
@@ -266,8 +269,8 @@ public class DPanel extends JPanel {
 		} catch ( IOException e ){
 			System.out.println(e);
 		}
-		
-		for (char i = (char)startingChar; i < 256; i++, k++, Char++) {
+
+		for (char i = (char)startingChar; i < 256; i++, k++) {
 
 			if (k == row) {
 				y += cellHeight;
@@ -276,9 +279,9 @@ public class DPanel extends JPanel {
 			}
 			
 			try {
-				BufferBin.write(Char);
+				BufferBin.write(i);
 				BufferBin.writeShort((short)x);
-				BufferBin.writeShort((short)(y + tes.getHeight() - g.getFontMetrics().getDescent() ) );
+				BufferBin.writeShort((short) y);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -307,11 +310,7 @@ public class DPanel extends JPanel {
 			System.out.println("Image not ready yet...");
 			return;
 		}
-		Graphics _g = Font_Image.getGraphics();
-		Graphics2D g = (Graphics2D) _g;
-
-		FontMetrics tes = getFontMetrics(FontManager.GetFont());
-		
+				
 		try{
 			Out = new File(OutFile);
 			
@@ -329,7 +328,7 @@ public class DPanel extends JPanel {
 			BufferPlain.write(" cellWidth ");
 			BufferPlain.write(Integer.toString(cellWidth));
 			BufferPlain.write(" cellHeight ");
-			BufferPlain.write(Integer.toString(tes.getHeight()));
+			BufferPlain.write(Integer.toString(cellHeight));
 			BufferPlain.newLine();
 		} catch ( IOException e ){
 			System.out.println(e);
@@ -337,12 +336,6 @@ public class DPanel extends JPanel {
 
 		
 		for (char i = (char)startingChar; i < 256; i++, k++) {
-			// Col count...
-			// HACK:
-			if (!FontManager.GetFont().canDisplay(i)) {
-				// FIXME:!
-				// continue;
-			}
 
 			if (k == row) {
 				y += cellHeight;
@@ -350,7 +343,6 @@ public class DPanel extends JPanel {
 				k = 0;
 			}
 			
-		//	g.drawString(Character.toString(i), x, y + 10);
 			try {
 				//FIXME: Add to each char his width.
 				BufferPlain.write(Integer.toString(i));
@@ -373,7 +365,146 @@ public class DPanel extends JPanel {
 			e.printStackTrace();
 		}
 	}
+	//http://www.mkyong.com/java/how-to-create-xml-file-in-java-dom/
+	public void savetoXml(String OutFile){
+		int x = 0;
+		int y = 0;
+		int k = 0;
+		int row = 16;
 
+		DocumentBuilderFactory docFactory;
+		DocumentBuilder 	   docBuilder;
+		Element 			   RootElement = null;
+		Document 			   Root = null;
+		Element 		       Generic;
+
+		if( Font_Image == null ){
+			System.out.println("Image not ready yet...");
+			return;
+		}
+				
+		try {
+			docFactory = DocumentBuilderFactory.newInstance();
+			docBuilder = docFactory.newDocumentBuilder();
+			
+			Root = docBuilder.newDocument();
+			RootElement = Root.createElement("JFontTool");
+			Root.appendChild(RootElement);
+			
+			Element TextureInfo = Root.createElement("TexInfo");
+			RootElement.appendChild(TextureInfo);
+			
+			Generic = Root.createElement("Width");
+			Generic.appendChild(Root.createTextNode(Integer.toString( ( Image_Size.width - 1 ) ) ) );
+			TextureInfo.appendChild(Generic);
+			
+			Generic = Root.createElement("Height");
+			Generic.appendChild(Root.createTextNode(Integer.toString( ( Image_Size.height - 1 ) ) ) );
+			TextureInfo.appendChild(Generic);
+			
+			Generic = Root.createElement("CWidth");
+			Generic.appendChild(Root.createTextNode(Integer.toString( cellWidth ) ) );
+			TextureInfo.appendChild(Generic);
+			
+			Generic = Root.createElement("CHeight");
+			Generic.appendChild(Root.createTextNode(Integer.toString( cellWidth ) ) );
+			TextureInfo.appendChild(Generic);
+			
+			Generic = Root.createElement("FSize");
+			Generic.appendChild(Root.createTextNode(Integer.toString( FontManager.GetFont().getSize() ) ) );
+			TextureInfo.appendChild(Generic);
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+
+		Element CellInfo = Root.createElement("CellInfo");
+		RootElement.appendChild(CellInfo);
+		
+		for (char i = (char)startingChar; i < 256; i++, k++) {
+
+			if (k == row) {
+				y += cellHeight;
+				x = 0;
+				k = 0;
+			}
+			
+			Generic = Root.createElement("Char");
+			Generic.appendChild(Root.createTextNode(Integer.toString( i ) ) );
+			CellInfo.appendChild(Generic);
+			
+			Generic = Root.createElement("X");
+			Generic.appendChild(Root.createTextNode(Integer.toString( x ) ) );
+			CellInfo.appendChild(Generic);
+			
+			Generic = Root.createElement("Y");
+			Generic.appendChild(Root.createTextNode(Integer.toString( y ) ) );
+			CellInfo.appendChild(Generic);
+			
+			x += cellWidth;
+
+		}
+		
+		
+		try {
+			TransformerFactory transformerFactory = TransformerFactory.newInstance();
+			Transformer transformer = transformerFactory.newTransformer();
+			DOMSource source = new DOMSource(Root);
+			StreamResult result = new StreamResult(new File(OutFile));
+			//If stream is stdout un-comment this.
+		    //transformer.setOutputProperty(OutputKeys.INDENT, "yes"); 
+			transformer.transform(source, result);
+		} catch( TransformerException e ){
+			e.printStackTrace();
+		}
+
+
+	}
+
+	   private static BufferedImage imageToBufferedImage(final Image image)
+	   {
+	      final BufferedImage bufferedImage =
+	         new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+	      final Graphics2D g2 = bufferedImage.createGraphics();
+	      g2.drawImage(image, 0, 0, null);
+	      g2.dispose();
+	      return bufferedImage;
+	    }
+
+	   /**
+	    * Make provided image transparent wherever color matches the provided color.
+	    *
+	    * @param im BufferedImage whose color will be made transparent.
+	    * @param color Color in provided image which will be made transparent.
+	    * @return Image with transparency applied.
+	    */
+	   public static Image makeColorTransparent(final BufferedImage im, final Color color)
+	   {
+	      final ImageFilter filter = new RGBImageFilter()
+	      {
+	         // the color we are looking for (black)... Alpha bits are set to opaque
+	         public int markerRGB = color.getRGB() | 0x000000;
+
+	         public final int filterRGB(final int x, final int y, final int rgb)
+	         {
+	            if ((rgb | 0x000000) == markerRGB)
+	            {
+	               // Mark the alpha bits as zero - transparent
+	               return 0x000000 & rgb;
+	            }
+	            else
+	            {
+	               // nothing to do
+	               return rgb;
+	            }
+	         }
+	      };
+
+	      final ImageProducer ip = new FilteredImageSource(im.getSource(), filter);
+	      return Toolkit.getDefaultToolkit().createImage(ip);
+	   }
+	
 	//FIXME:Only pngs images works...
 	//FIXME:Write TARGA loader/writer class...
 	public void saveImage(String OutImage,String format){
@@ -390,11 +521,13 @@ public class DPanel extends JPanel {
 			
 			if( f.exists() && !f.canWrite() ){
 				//FIXME:Ask to overwrite or specify a new name.
-				System.out.println("saveImage:Woops...");
+				System.out.println("saveImage:Failed...");
 				return;//Dam it
 			}
-
-			ImageIO.write(Font_Image, format, f);
+		final int color = Font_Image.getRGB(0, 0);
+		final Image imageWithTransparency = makeColorTransparent(Font_Image, new Color(color));
+		final BufferedImage transparentImage = imageToBufferedImage(imageWithTransparency);
+			ImageIO.write(transparentImage, format, f);
 	
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

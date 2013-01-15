@@ -12,6 +12,7 @@ public class DataFile extends FilterOutputStream {
       public int Length(){
     	  return Wrote;
       }
+      
       public void write(Byte value) throws IOException {
           ByteBuffer buffer = ByteBuffer.allocate(1).order(ByteOrder.nativeOrder());  
           buffer.put(value);  
