@@ -365,7 +365,7 @@ public class DPanel extends JPanel {
 			e.printStackTrace();
 		}
 	}
-	//http://www.mkyong.com/java/how-to-create-xml-file-in-java-dom/
+
 	public void savetoXml(String OutFile){
 		int x = 0;
 		int y = 0;
@@ -429,18 +429,21 @@ public class DPanel extends JPanel {
 				x = 0;
 				k = 0;
 			}
+
+			Element ChildInfo = Root.createElement("Cell" + Integer.toString(i));
+			RootElement.appendChild(ChildInfo);
 			
 			Generic = Root.createElement("Char");
 			Generic.appendChild(Root.createTextNode(Integer.toString( i ) ) );
-			CellInfo.appendChild(Generic);
+			ChildInfo.appendChild(Generic);
 			
 			Generic = Root.createElement("X");
 			Generic.appendChild(Root.createTextNode(Integer.toString( x ) ) );
-			CellInfo.appendChild(Generic);
+			ChildInfo.appendChild(Generic);
 			
 			Generic = Root.createElement("Y");
 			Generic.appendChild(Root.createTextNode(Integer.toString( y ) ) );
-			CellInfo.appendChild(Generic);
+			ChildInfo.appendChild(Generic);
 			
 			x += cellWidth;
 
