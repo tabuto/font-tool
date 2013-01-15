@@ -397,6 +397,39 @@ public class FontTool extends JFrame implements ActionListener {
 			}
 		});
         
+        JMenuItem ExpXML = new JMenuItem("To XML file...");
+        ExpXML.addActionListener(new ActionListener() {
+			
+			public void actionPerformed(ActionEvent ev) {
+				JFileChooser FChooser = new JFileChooser();
+				FChooser.setDialogTitle("");
+				FChooser.setAcceptAllFileFilterUsed(true);
+				//FChooser2.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				int stats;
+				stats = FChooser.showSaveDialog(null);
+				if( stats == JFileChooser.APPROVE_OPTION ){
+					if( FChooser.getSelectedFile().exists() ){
+						int Question;
+						Question = JOptionPane.showConfirmDialog(FChooser.getParent(),
+			                    "File exists, overwrite?", "File exists",
+			                    JOptionPane.YES_NO_OPTION);
+						
+						if( Question == JOptionPane.YES_OPTION ){
+						    System.out.println("Dir: " + FChooser.getSelectedFile().getAbsolutePath());
+						    //if( !FChooser2.getSelectedFile().canWrite() )
+						    Preview.savetoXml(FChooser.getSelectedFile().getAbsolutePath());
+						} else {
+							FChooser.showSaveDialog(null);
+						}
+					}
+				    System.out.println("Dir: " + FChooser.getSelectedFile().getAbsolutePath());
+				    Preview.savetoXml(FChooser.getSelectedFile().getAbsolutePath());
+				} else {
+				    System.out.println(JFileChooser.CANCEL_OPTION);
+				}
+			}
+		});
+        
         JMenuItem ExpImageMenu = new JMenu("To Image...");
         JMenuItem ExptoPng = new JMenuItem(".png");
         ExptoPng.addActionListener(new ActionListener() {
@@ -470,6 +503,7 @@ public class FontTool extends JFrame implements ActionListener {
 */
         ExportMenu.add(ExpBin);
         ExportMenu.add(ExpPlain);
+        ExportMenu.add(ExpXML);
         ExportMenu.add(ExpImageMenu);
         ExpImageMenu.add(ExptoPng);
        // ExpImageMenu.add(ExptoTGA);
