@@ -8,6 +8,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Toolkit;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
@@ -45,11 +47,12 @@ import org.w3c.dom.Element;
  A simple JPanel on which you can draw basic shapes or load basic images.
 */
 
-public class DPanel extends JPanel {
+public class DPanel extends JPanel implements MouseListener{
 	private static final long serialVersionUID = -2023403245235877149L;
 
 	private BufferedImage Font_Image;
 	private Dimension Image_Size = new Dimension(257, 257);
+	public static CharInfo[]  cInfo = new CharInfo[256];
 	private int cellWidth = 16;
 	private int cellHeight = 16;
 	private Color BGColor = Color.black;
@@ -58,6 +61,8 @@ public class DPanel extends JPanel {
 	private FontManager  CFont = new FontManager();
 	private boolean showGrid;
 	private int startingChar = 0;
+	private char selectedChar = 0;
+	private boolean forceRefresh = false;
 
 
 
@@ -120,18 +125,15 @@ public class DPanel extends JPanel {
 
 	public void setImage_Size(Dimension image_Size) {
 		Image_Size = image_Size;
+		forceRefresh = true;
 		Update();
+		forceRefresh = false;
 	}
 
 	public Font getCFont() {
 		return FontManager.GetFont();
 	}
 
-	/*public void setCFont(File cFont) {
-		CFont.SetFont(cFont.getAbsolutePath(),true);
-		Update();
-	}*/
-	
 	public void setCFont(String Font,boolean TTF){
 		CFont.SetFont(Font,TTF);
 		Update();
@@ -139,7 +141,9 @@ public class DPanel extends JPanel {
 	
 	public void setFontSize(float Size){
 		CFont.SetSize(Size);
+		forceRefresh = true;
 		Update();
+		forceRefresh = false;
 	}
 	public int getStartingChar() {
 		return startingChar;
@@ -147,11 +151,18 @@ public class DPanel extends JPanel {
 
 	public void setStartingChar(int startingChar) {
 		this.startingChar = startingChar;
+		forceRefresh = true;
 		Update();
+		forceRefresh = false;
+	}
+	
+	public char getSelectedChar() {
+		return selectedChar;
 	}
 
 	public final void Update() {
 		System.out.println("Refreshing grid");
+		//imageSizeHasChanged = true;//Force it.
 		Draw_Chars();
 	}
 
@@ -191,22 +202,78 @@ public class DPanel extends JPanel {
 				x = 0;
 				k = 0;
 			}
-
+			
+			cx = (x + 4);
+			cy = (y + tes.getHeight() - g.getFontMetrics().getDescent() );
+			
 			g.setColor(BGColor);
 			// Draw a background rect in order to display white chars.
 			g.fillRect(x, y, Image_Size.width, Image_Size.height);
+			
+			//If the current place is null or it has to be updated...
+			if( cInfo[i] == null || 
+			  ( cInfo[i] != null &&( cInfo[i].x != x || cInfo[i].y != y ) ) &&
+			  ( cInfo[i] != null &&( cInfo[i].cx == cx || cInfo[i].cy == cy ) ) ){
+				cInfo[i] = new CharInfo();
+				cInfo[i].c = i;
+				cInfo[i].x = x;
+				cInfo[i].y = y;
+				cInfo[i].cx = cx;
+				cInfo[i].cy = cy;
+				cInfo[i].padX = 0;
+				cInfo[i].padY = 0;
+				cInfo[i].Marked = false;
+			} /*else if( (cInfo[i] == null || cInfo[i] != null) && imageSizeHasChanged ){
+				cInfo[i] = new CharInfo();
+				cInfo[i].c = i;
+				cInfo[i].cx = cx;
+				cInfo[i].cy = cy;
+				cInfo[i].Marked = false;
+				imageSizeHasChanged = false;
+				System.out.println("Image size has changed.!");
+			} */else if( cInfo[i] != null && cInfo[i].cx == 0 ){
+				//We want to reset x position and leave char marked and y position as-it-is.
+				cInfo[i].c = i;
+				cInfo[i].x = x;
+				cInfo[i].y = y;
+				cInfo[i].cx = cx;
+				cInfo[i].padX = 0;
+			} else if( cInfo[i] != null && cInfo[i].cy == 0 ){
+				//We want to reset y position and leave char marked and x position as-it-is.
+				cInfo[i].c = i;
+				cInfo[i].x = x;
+				cInfo[i].y = y;
+				cInfo[i].cy = cy;
+				cInfo[i].padY = 0;
+			}
+			
 			if (showGrid) {
 				g.setColor(GridColor);
 				g.drawRect(x, y, cellWidth, cellHeight);
 				System.out.println("X;Y => ( " + x + ";" + y + "(" + tes.getHeight() + ")" + ")");
 			}
 
+			if( cInfo[i].Marked ){
+				g.setColor(Color.green);
+				g.fillRect(x, y, cellWidth, cellHeight);
+				//cInfo[i].Marked = false;//Next time we re-paint it won't be marked anymore.
+			}
 			g.setColor(CharsColor);
-			
-			cx = (x + 4);
-			cy = (y + tes.getHeight() - g.getFontMetrics().getDescent() );
-			
-			g.drawString(Character.toString(i), cx , cy/* +  tes.getHeight() - g.getFontMetrics().getDescent()*/);
+			//Fixme: Padding.
+			/*if( i == '_' && FontManager.GetFont().getSize() == 16 ){
+				System.out.println("Drawing _.");
+				g.drawString(Character.toString(i), cx , y + 12);
+			} else if( i == '@' && FontManager.GetFont().getSize() == 12 ){
+				g.drawString(Character.toString(i), cx - 2 , cy - 1);
+			} else if( i == '%' && FontManager.GetFont().getSize() == 16 ){
+				g.drawString(Character.toString(i), cx - 2 , cy);
+			} else {*/
+			if( forceRefresh ){
+			    g.drawString(Character.toString(cInfo[i].c), cx , cy);
+			} else {
+			    g.drawString(Character.toString(cInfo[i].c), cInfo[i].cx , cInfo[i].cy/* +  tes.getHeight() - g.getFontMetrics().getDescent()*/);
+			}
+			//}
 
 			x += cellWidth;
 
@@ -279,9 +346,17 @@ public class DPanel extends JPanel {
 			}
 			
 			try {
-				BufferBin.write(i);
-				BufferBin.writeShort((short)x);
-				BufferBin.writeShort((short) y);
+				//Sort of useless here...
+				if( i == '_' && FontManager.GetFont().getSize() == 16 ){
+					BufferBin.write(i);
+					BufferBin.writeShort((short)x);
+					BufferBin.writeShort((short) (y));
+				} else {
+					BufferBin.write(i);
+					BufferBin.writeShort((short)x);
+					BufferBin.writeShort((short) y);
+				}
+
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -539,6 +614,7 @@ public class DPanel extends JPanel {
 		}
 
 	}
+	
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 
@@ -549,15 +625,104 @@ public class DPanel extends JPanel {
 	    int x = (this.getWidth() - Font_Image.getWidth()) / 2;
 	    int y = (this.getHeight() - Font_Image.getHeight()) / 2;
 
+	    System.out.println("XY: " + x + " / " + y);
 	    g.drawImage(Font_Image, x, y, this);
 	}
+	
+	public void mouseClicked(MouseEvent e) {
+	}
 
+	public void mousePressed(MouseEvent e) {
+		int offX1 =  (this.getWidth() - Font_Image.getWidth()) / 2;
+		int offY1 =  (this.getHeight() - Font_Image.getHeight()) / 2;
+
+		
+		if( e.getButton() != MouseEvent.BUTTON1 ){
+			System.out.println("Pressed Right/Center/Other button.");
+			if( selectedChar != 0 ){
+				cInfo[selectedChar].Marked = false;
+			}
+    		FontTool.Update_FSettingPanel(-1);
+    		Draw_Chars();
+			return;
+		}
+		
+		if( Font_Image == null ){
+			System.out.println("Fontimage is null!");
+			return;
+		}
+		
+	   // System.out.println("XY: " + offX1 + " / " + offY1);
+	    
+	    for( int i = startingChar; i < 256; i++ ){
+	    	if( cInfo[i] == null ){
+	    		System.out.println("cInfo[ " + i +" ] can't be NULL!");
+	    	}
+	    	if( e.getX()  >= ( cInfo[i].x + offX1 ) &&
+	    		e.getY()  >= ( cInfo[i].y + offY1 ) &&
+	    		e.getX()  <= ( cInfo[i].x + offX1 + cellWidth ) &&
+	    		e.getY()  <= ( cInfo[i].y + offY1 + cellHeight ) ){
+	    	    System.out.println("-----------------------------------------------------");
+	    	    System.out.println(e.getX() + " >= " + (cInfo[i].x + offX1) );
+	    	    System.out.println(e.getY() + " >= " + (cInfo[i].y + offX1) );
+	    	    System.out.println(e.getX() + " <= " + (cInfo[i].x + offX1 + cellWidth ) );
+	    	    System.out.println(e.getY() + " <= " + (cInfo[i].y + offY1 + cellHeight ) );
+	    	    System.out.println("Pure coordinates: " + cInfo[i].x + " / " + cInfo[i].y);
+	    	    System.out.println("-----------------------------------------------------");
+	    		//System.out.println("Char: " + cInfo[i].c + "( " + (int) cInfo[i].c + " )");
+	    		//selectedChar = cInfo[i].c;
+	    	    //Unmark it.
+	    	    if( selectedChar != 0 ){
+	    	    	cInfo[selectedChar].Marked = false;
+	    	    	//FontTool.CharPositionX.setValue(0);
+	    	    	//FontTool.CharPositionY.setValue(0);
+	    	    	this.selectedChar = 257;
+	    	    }
+	    		cInfo[i].Marked = true;
+	    		FontTool.CharPositionX.setValue(cInfo[i].padX);
+	    		FontTool.CharPositionY.setValue(cInfo[i].padY);
+	    		FontTool.Update_FSettingPanel(i);
+	    		this.selectedChar = (char)i;
+	    		Draw_Chars();
+	    		break;
+	    	}
+	    }
+	    
+	   
+	}
+
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+		//System.out.println("Mouse released from DPanel.");
+		//System.out.println("Coords: " + e.getX() + " / " + e.getY() + ".");
+	}
+
+	public void mouseEntered(MouseEvent e) {
+		//System.out.println("Mouse entered inside DPanel.");
+		//System.out.println("Coords: " + e.getX() + " / " + e.getY() + ".");
+	}
+
+	public void mouseExited(MouseEvent e) {
+		//System.out.println("Mouse exited from DPanel.");
+		//System.out.println("Coords: " + e.getX() + " / " + e.getY() + ".");
+	}
+	
 	public DPanel(String Font, int Size) {
+		
 		setPreferredSize(new Dimension(440, 480));
+		
 		setBorder(new CompoundBorder(new TitledBorder("Preview"),
 				new EmptyBorder(4, 4, 4, 4)));
+
+		//for( int i = 0; i < 256; i++ ){
+			//cInfo[i] = new CharInfo();
+		//}
+		
+		addMouseListener(this);
+		//addMouseMotionListener(this);
 		// Draw_Grid();
 		// setBackground(Color.gray);
 	}
+
 
 }
