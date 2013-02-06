@@ -40,6 +40,7 @@ public class FontTool extends JFrame implements ActionListener {
 	
 	static FontManager Fm;
 	JPanel 	  Settings;
+	JPanel	  FSettings;
 	JPanel	  InfoPanel;
 	JMenuBar  MBar;
 	JScrollPane hScroll;
@@ -56,19 +57,29 @@ public class FontTool extends JFrame implements ActionListener {
 	JSpinner CSpinner2;
 	SpinnerNumberModel SCharRange = null;
 	JSpinner SChar;
+	static JSpinner CharPositionX;
+	static JSpinner CharPositionY;
+	static SpinnerNumberModel CharPositionRangeX = null;
+	static SpinnerNumberModel CharPositionRangeY = null;
+
 	JButton button5;
 	JButton button6;
 	JButton button7;
 	JLabel loadedFont;
+	static JLabel selectedChar;
 	String[] Image_Sizes = { "256x256", "512x512" };
 	Float[]    Font_Progression = {12f,14f,16f,18f,21f,24f};
 	String[] AA_Modes = {"Off","On","AA Gasp","AA LCD-HRGB"};
+	private static int lastValue;
+	private static int lastYValue;
+
 
 	public FontTool() {
 		
 		Setup_Panels();
 		Setup_Widgets();
 		Setup_InfoPanel();
+		Setup_FSettingPanel();
 		Setup_MBar();
 
 		setTitle("Font Tool");
@@ -89,17 +100,24 @@ public class FontTool extends JFrame implements ActionListener {
 				new EmptyBorder(4, 4, 4, 4)));
 		pack();
 		add(Settings, BorderLayout.EAST);
+		FSettings = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		FSettings.setPreferredSize(new Dimension(160,110));
+		FSettings.setBorder(new CompoundBorder(new TitledBorder("Char Settings"),
+				new EmptyBorder(4, 4, 4, 4)));
+		pack();
+		add(FSettings,BorderLayout.WEST);
 		// Add a drawing panel.
 		Preview = new DPanel("arial.ttf", 12);
 		add(Preview, BorderLayout.CENTER);
 		MBar = new JMenuBar();
 		// Add a status panel (Font info,x/y mouse position on the grid etc...).
 		InfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		InfoPanel.setPreferredSize(new Dimension(100,110));
+		InfoPanel.setPreferredSize(new Dimension(110,110));
 		InfoPanel.setBorder(new CompoundBorder(new TitledBorder("Info"),
 				new EmptyBorder(4, 4, 4, 4)));
 		pack();
 		add(InfoPanel,BorderLayout.SOUTH);
+
 	}
 
 	private void Setup_Widgets() {
@@ -304,6 +322,154 @@ public class FontTool extends JFrame implements ActionListener {
 		return;
 	}
 
+	private void Setup_FSettingPanel(){
+		//No selected char yet.
+		selectedChar = new JLabel("<html>Current char: NULL"
+				+ "<br>" + "X Position: 0"
+				+ "<br>" + "Y Position: 0"
+				+ "<br>" + "CharX Position: 0"
+			    + "<br>" + "CharY Position: 0");
+		FSettings.add(selectedChar);
+		
+		JLabel cXPosition = new JLabel("New Char X: ");
+		FSettings.add(cXPosition);
+		CharPositionRangeX = new SpinnerNumberModel(0, -4, 4, 1);
+		lastValue = CharPositionRangeX.getNumber().intValue();
+		CharPositionX = new JSpinner(CharPositionRangeX);
+		CharPositionX.setPreferredSize(new Dimension(40,20));
+		CharPositionX.setEnabled(false);
+		ChangeListener JSpinChanged1 = new ChangeListener() {
+			
+			public void stateChanged(ChangeEvent ev) {
+		         //Preview.setCellWidth(SpinnerRange.getNumber().intValue());
+				int cx;
+				int xRange = CharPositionRangeX.getNumber().intValue();
+				
+				if( Preview.getSelectedChar() == 257 ){
+					return;
+				}
+				
+				cx = DPanel.cInfo[Preview.getSelectedChar()].cx;
+				
+				if( xRange == 0 ){
+					//Reset it.
+					DPanel.cInfo[Preview.getSelectedChar()].cx = 0;
+					Preview.Update();
+					return;
+					
+				}
+				if( xRange < lastValue ){
+					if( xRange < 0 ){
+						DPanel.cInfo[Preview.getSelectedChar()].cx = cx + xRange;
+					} else {
+						DPanel.cInfo[Preview.getSelectedChar()].cx = cx - xRange;
+					}
+					lastValue = xRange;
+					DPanel.cInfo[Preview.getSelectedChar()].padX = xRange;
+					//lastcx = cx;
+					Preview.Update();
+					System.out.println("Decreasing...");
+					return;
+				}
+				if( xRange < 0 ){
+					DPanel.cInfo[Preview.getSelectedChar()].cx = cx - xRange;
+				} else {
+					DPanel.cInfo[Preview.getSelectedChar()].cx = cx + xRange;
+				}
+				System.out.println("Increasing...");
+				DPanel.cInfo[Preview.getSelectedChar()].padX = xRange;
+				lastValue = xRange;
+				//lastcx = cx;
+				//DPanel.cInfo[Preview.getSelectedChar()].cy = CharPositionRangeY.getNumber().intValue();
+				Preview.Update();
+			}
+		};
+		CharPositionX.addChangeListener(JSpinChanged1);
+		FSettings.add(CharPositionX);
+		JLabel cYPosition = new JLabel("New Char Y: ");
+		FSettings.add(cYPosition);
+		
+		CharPositionRangeY = new SpinnerNumberModel(0, -4, 4, 1);
+		lastYValue = CharPositionRangeY.getNumber().intValue();
+		CharPositionY = new JSpinner(CharPositionRangeY);
+		CharPositionY.setPreferredSize(new Dimension(40,20));
+		CharPositionY.setEnabled(false);
+		ChangeListener JSpinChanged2 = new ChangeListener() {
+			
+			public void stateChanged(ChangeEvent ev) {
+				int cy;
+				int yRange = CharPositionRangeY.getNumber().intValue();
+				
+				if( Preview.getSelectedChar() == 257 ){
+					return;
+				}
+				
+				cy = DPanel.cInfo[Preview.getSelectedChar()].cy;
+				
+				if( yRange == 0 ){
+					//Reset it.
+					DPanel.cInfo[Preview.getSelectedChar()].cy = 0;
+					Preview.Update();
+					return;
+				}
+				
+				if( yRange < lastYValue ){
+					if( yRange < 0 ){
+						DPanel.cInfo[Preview.getSelectedChar()].cy = cy + yRange;
+					} else {
+						DPanel.cInfo[Preview.getSelectedChar()].cy = cy - yRange;
+					}
+					lastYValue = yRange;
+					DPanel.cInfo[Preview.getSelectedChar()].padY = yRange;
+					//	lastcy = cy;
+					Preview.Update();
+					System.out.println("Decreasing...");
+					return;
+				}
+				if( yRange < 0 ){
+					DPanel.cInfo[Preview.getSelectedChar()].cy = cy - yRange;
+				} else {
+					DPanel.cInfo[Preview.getSelectedChar()].cy = cy + yRange;
+				}
+				System.out.println("Increasing...");
+				lastYValue = yRange;
+				DPanel.cInfo[Preview.getSelectedChar()].padY = yRange;
+				//lastcy = cy;
+				Preview.Update();
+			}
+		};
+		CharPositionY.addChangeListener(JSpinChanged2);
+		FSettings.add(CharPositionY);
+
+	}
+
+	public static void Update_FSettingPanel(final int Char){
+		if( Char == -1 ){
+			selectedChar.setText("<html>Current char: NULL"
+					+ "<br>" + "X Position: " 
+					+ "<br>" + "Y Position: "
+					+ "<br>" + "CharX Position: "
+					+ "<br>" + "CharY Position: ");
+			return;	
+		}
+		if( !FontManager.GetFont().canDisplay(DPanel.cInfo[Char].c) ){
+			selectedChar.setText("<html>Current char: NULL"
+					+ "<br>" + "X Position: "+ DPanel.cInfo[Char].x 
+					+ "<br>" + "Y Position: " + DPanel.cInfo[Char].y
+					+ "<br>" + "CharX Position: " + DPanel.cInfo[Char].cx
+					+ "<br>" + "CharY Position: " + DPanel.cInfo[Char].cy);
+			return;
+		} 
+		selectedChar.setText("<html>Current char: " + DPanel.cInfo[Char].c
+						+ "<br>" + "X Position: "+ DPanel.cInfo[Char].x 
+						+ "<br>" + "Y Position: " + DPanel.cInfo[Char].y
+						+ "<br>" + "CharX Position: " + DPanel.cInfo[Char].cx
+						+ "<br>" + "CharY Position: " + DPanel.cInfo[Char].cy);
+		
+
+	}
+	
+	
 	private void Setup_MBar(){
 		JMenu File = new JMenu("File");
 
@@ -557,6 +723,10 @@ public class FontTool extends JFrame implements ActionListener {
 					button5.setEnabled(true);
 					button6.setEnabled(true);
 					button7.setEnabled(true);
+					CharPositionX.setEnabled(true);
+					CharPositionY.setEnabled(true);
+					FSizeChooser.setSelectedIndex(0);
+					Preview.setFontSize(12);
 				} else if (te.contains("512")) {
 					System.out.println("512x512");
 					Preview.setImage_Size(new Dimension(513, 513));
@@ -573,6 +743,10 @@ public class FontTool extends JFrame implements ActionListener {
 					button5.setEnabled(true);
 					button6.setEnabled(true);
 					button7.setEnabled(true);
+					CharPositionX.setEnabled(true);
+					CharPositionY.setEnabled(true);
+					FSizeChooser.setSelectedIndex(0);
+					Preview.setFontSize(12);
 				} else {
 
 				}
